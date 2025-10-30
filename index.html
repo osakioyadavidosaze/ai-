@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural AI - Advanced Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --chat-bg: rgba(255, 255, 255, 0.95);
+            --ai-gradient: linear-gradient(135deg, #4facfe, #00f2fe);
+            --user-gradient: linear-gradient(135deg, #667eea, #764ba2);
+            --text-color: #333;
+            --border-color: #eee;
+        }
+        
+        [data-theme="dark"] {
+            --primary-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --chat-bg: rgba(30, 30, 30, 0.95);
+            --text-color: #fff;
+            --border-color: #444;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-bg);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+        
+        .chat-container {
+            width: 420px;
+            height: 650px;
+            background: var(--chat-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(79, 172, 254, 0.6);
+            border-radius: 50%;
+            animation: float 6s infinite linear;
+        }
+        
+        .chat-header {
+            background: var(--ai-gradient);
+            padding: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .ai-avatar {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: pulse 2s infinite;
+            position: relative;
+        }
+        
+        .avatar-ring {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            animation: rotate 3s linear infinite;
+        }
+        
+        .ai-info h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .ai-status {
+            font-size: 12px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 35px;
+            height: 35px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            animation: slideIn 0.4s ease;
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .message.ai .message-avatar {
+            background: var(--ai-gradient);
+            color: white;
+        }
+        
+        .message.user .message-avatar {
+            background: var(--user-gradient);
+            color: white;
+        }
+        
+        .message-content {
+            background: var(--border-color);
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 280px;
+            word-wrap: break-word;
+            position: relative;
+        }
+        
+        .message.user .message-content {
+            background: var(--user-gradient);
+            color: white;
+        }
+        
+        .message-reactions {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .message:hover .message-reactions {
+            opacity: 1;
+        }
+        
+        .reaction-btn {
+            background: none;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .reaction-btn:hover {
+            background: rgba(79, 172, 254, 0.1);
+            transform: scale(1.2);
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--border-color);
+            border-radius: 18px;
+            width: fit-content;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .voice-wave {
+            display: none;
+            align-items: center;
+            gap: 2px;
+            margin-left: 10px;
+        }
+        
+        .wave-bar {
+            width: 3px;
+            background: var(--ai-gradient);
+            border-radius: 2px;
+            animation: wave 1s infinite ease-in-out;
+        }
+        
+        .chat-input {
+            padding: 20px;
+            background: var(--chat-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .input-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px 45px 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: var(--chat-bg);
+            color: var(--text-color);
+        }
+        
+        .input-field:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .voice-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: var(--ai-gradient);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .voice-btn:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .voice-btn.recording {
+            animation: pulse 1s infinite;
+            background: #ff4757;
+        }
+        
+        .send-btn {
+            width: 45px;
+            height: 45px;
+            background: var(--ai-gradient);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-btn {
+            padding: 8px 12px;
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+        
+        .quick-btn:hover {
+            background: rgba(79, 172, 254, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            position: relative;
+            overflow-x: auto;
+        }
+        
+        .code-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #a0aec0;
+        }
+        
+        .copy-btn {
+            background: #4a5568;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+        
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 20px; }
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        .wave-bar:nth-child(1) { height: 15px; animation-delay: 0s; }
+        .wave-bar:nth-child(2) { height: 20px; animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { height: 25px; animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { height: 20px; animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { height: 15px; animation-delay: 0.4s; }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="chat-container">
+        <div class="particles" id="particles"></div>
+        
+        <div class="chat-header">
+            <div class="header-left">
+                <div class="ai-avatar">
+                    <div class="avatar-ring"></div>
+                    🤖
+                </div>
+                <div class="ai-info">
+                    <h3>Neural AI</h3>
+                    <div class="ai-status">
+                        <div class="status-dot"></div>
+                        Online & Enhanced
+                        <div class="voice-wave" id="voiceWave">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="control-btn" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+                <button class="control-btn" onclick="clearChat()" title="Clear Chat">🗑️</button>
+                <button class="control-btn" onclick="exportChat()" title="Export Chat">📥</button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="messages">
+            <div class="message ai">
+                <div class="message-avatar">🤖</div>
+                <div>
+                    <div class="message-content">
+                        Hi! I'm Neural AI with enhanced capabilities. I can help with voice commands, code highlighting, and much more! 🚀
+                    </div>
+                    <div class="message-reactions">
+                        <button class="reaction-btn" onclick="addReaction(this, '👍')">👍</button>
+                        <button class="reaction-btn" onclick="addReaction(this, '❤️')">❤️</button>
+                        <button class="reaction-btn" onclick="addReaction(this, '🤔')">🤔</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                <div class="quick-btn" onclick="sendQuickMessage('Show me some code')">💻 Code Example</div>
+                <div class="quick-btn" onclick="sendQuickMessage('Dark mode demo')">🌙 Dark Mode</div>
+                <div class="quick-btn" onclick="sendQuickMessage('Voice features')">🎤 Voice Demo</div>
+            </div>
+            
+            <div class="message ai typing-indicator" id="typing">
+                <div class="message-avatar">🤖</div>
+                <div class="typing-indicator">
+                    <span>Neural is thinking</span>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <div class="input-container">
+                <input type="text" class="input-field" id="messageInput" placeholder="Type or speak your message..." onkeypress="handleKeyPress(event)">
+                <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="Voice Input">🎤</button>
+            </div>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typing');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const voiceWave = document.getElementById('voiceWave');
+        
+        let isRecording = false;
+        let recognition = null;
+        let currentTheme = 'light';
+
+        // Initialize speech recognition
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                messageInput.value = transcript;
+                stopVoiceRecording();
+            };
+            
+            recognition.onerror = function() {
+                stopVoiceRecording();
+            };
+        }
+
+        // Enhanced AI responses
+        const aiResponses = {
+            'show me some code': `💻 Here's a JavaScript example:\n\n\`\`\`javascript\nfunction greetUser(name) {\n    return \`Hello, \${name}! Welcome to Neural AI.\`;\n}\n\nconsole.log(greetUser('Developer'));\n\`\`\`\n\nThis function uses template literals for dynamic greetings!`,
+            'dark mode demo': '🌙 Dark mode activated! Notice how the entire interface smoothly transitions. The particles, gradients, and text colors all adapt beautifully. Try the theme toggle button! ✨',
+            'voice features': '🎤 Voice features include:\n• Speech-to-text input\n• Visual voice wave indicators\n• Hands-free interaction\n• Multi-language support\n\nTry clicking the microphone button!',
+            'hello': '👋 Hello there! I love your enthusiasm! How can I assist you today?',
+            'thank you': '😊 You\'re absolutely welcome! I\'m here whenever you need help. What else can we explore together?',
+            'default': '🤔 That\'s fascinating! I\'m constantly learning and would love to dive deeper into that topic with you. What specific aspect interests you most?'
+        };
+
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            
+            setInterval(() => {
+                if (document.querySelectorAll('.particle').length < 15) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                    particlesContainer.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 6000);
+                }
+            }, 500);
+        }
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+            
+            let processedContent = content;
+            
+            // Process code blocks
+            if (content.includes('```')) {
+                processedContent = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                    return `<div class="code-block">
+                        <div class="code-header">
+                            <span>${lang || 'code'}</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code>${code.trim()}</code></pre>
+                    </div>`;
+                });
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
+                <div>
+                    <div class="message-content">${processedContent.replace(/\n/g, '<br>')}</div>
+                    ${!isUser ? `<div class="message-reactions">
+                        <button class="reaction-btn" onclick="addReaction(this, '👍')">👍</button>
+                        <button class="reaction-btn" onclick="addReaction(this, '❤️')">❤️</button>
+                        <button class="reaction-btn" onclick="addReaction(this, '🤔')">🤔</button>
+                    </div>` : ''}
+                </div>
+            `;
+            
+            messagesContainer.insertBefore(messageDiv, typingIndicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function toggleVoice() {
+            if (!recognition) {
+                alert('Speech recognition not supported in this browser');
+                return;
+            }
+            
+            if (isRecording) {
+                stopVoiceRecording();
+            } else {
+                startVoiceRecording();
+            }
+        }
+
+        function startVoiceRecording() {
+            isRecording = true;
+            voiceBtn.classList.add('recording');
+            voiceBtn.innerHTML = '⏹️';
+            voiceWave.style.display = 'flex';
+            recognition.start();
+        }
+
+        function stopVoiceRecording() {
+            isRecording = false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.innerHTML = '🎤';
+            voiceWave.style.display = 'none';
+            if (recognition) recognition.stop();
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', currentTheme);
+            
+            const themeBtn = document.querySelector('.control-btn');
+            themeBtn.innerHTML = currentTheme === 'light' ? '🌙' : '☀️';
+        }
+
+        function clearChat() {
+            const messages = messagesContainer.querySelectorAll('.message:not(.typing-indicator)');
+            messages.forEach(msg => {
+                if (!msg.querySelector('.message-content').textContent.includes('Hi! I\'m Neural AI')) {
+                    msg.remove();
+                }
+            });
+        }
+
+        function exportChat() {
+            const messages = Array.from(messagesContainer.querySelectorAll('.message:not(.typing-indicator)'));
+            const chatText = messages.map(msg => {
+                const isUser = msg.classList.contains('user');
+                const content = msg.querySelector('.message-content').textContent;
+                return `${isUser ? 'You' : 'Neural AI'}: ${content}`;
+            }).join('\n\n');
+            
+            const blob = new Blob([chatText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'neural-ai-chat.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function addReaction(btn, emoji) {
+            btn.style.transform = 'scale(1.5)';
+            btn.textContent = emoji + '+1';
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+                btn.textContent = emoji;
+            }, 500);
+        }
+
+        function copyCode(btn) {
+            const code = btn.parentElement.nextElementSibling.textContent;
+            navigator.clipboard.writeText(code);
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 1000);
+        }
+
+        function showTyping() {
+            typingIndicator.style.display = 'flex';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        function getAIResponse(message) {
+            const lowerMessage = message.toLowerCase().trim();
+            
+            for (const [key, response] of Object.entries(aiResponses)) {
+                if (lowerMessage.includes(key)) {
+                    return response;
+                }
+            }
+            
+            return aiResponses.default;
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+            sendBtn.disabled = true;
+
+            showTyping();
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+
+            hideTyping();
+            const response = getAIResponse(message);
+            addMessage(response);
+            
+            sendBtn.disabled = false;
+            messageInput.focus();
+        }
+
+        function sendQuickMessage(message) {
+            messageInput.value = message;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Initialize
+        createParticles();
+        messageInput.focus();
+
+        // Add welcome message after delay
+        setTimeout(() => {
+            addMessage("✨ Try my enhanced features: voice input, code highlighting, dark mode, and message reactions!");
+        }, 2000);
+    </script>
+</body>
+</html>
